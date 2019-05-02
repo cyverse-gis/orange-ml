@@ -3,8 +3,9 @@ FROM consol/ubuntu-xfce-vnc
 USER root
 
 # conda install requires bzip
-RUN apt-get update && apt-get install -y python3-pip python3-dev python-virtualenv bzip2 g++ git sudo 
+RUN apt-get update && apt-get install -y python3-pip python3-dev python-virtualenv bzip2 g++ git
 RUN apt-get install -y xfce4-terminal software-properties-common python-numpy
+# RUN apt-get install -y sudo
 
 # browsers
 RUN rm /usr/share/xfce4/helpers/debian-sensible-browser.desktop
@@ -18,7 +19,7 @@ ENV CONDA_DIR /home/${USER}/.conda
 
 RUN useradd -m -s /bin/bash ${USER}
 RUN echo "${USER}:${PASSWORD}" | chpasswd
-RUN gpasswd -a ${USER} sudo
+# RUN gpasswd -a ${USER} sudo
 
 USER orange
 WORKDIR ${HOME}
@@ -37,6 +38,11 @@ ADD ./orange/orange-canvas.desktop Desktop/orange-canvas.desktop
 ADD ./config/xfce4 .config/xfce4
 ADD ./install/chromium-wrapper install/chromium-wrapper
 
+RUN wget -qO - https://packages.irods.org/irods-signing-key.asc | apt-key add - \
+    && echo "deb [arch=amd64] https://packages.irods.org/apt/ xenial main" > /etc/apt/sources.list.d/renci-irods.list \
+    && apt-get update \
+	  && apt-get install -y irods-icommands
+
 USER root
 RUN chown -R orange:orange .config Desktop install
 
@@ -52,7 +58,6 @@ ENV VNC_RESOLUTION 1920x1080
 ENV VNC_PW orange
 
 RUN cp /headless/wm_startup.sh ${HOME}
-
 
 ENTRYPOINT ["/dockerstartup/vnc_startup.sh"]
 CMD ["--tail-log"]
